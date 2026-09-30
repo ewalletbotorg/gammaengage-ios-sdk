@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tool versions
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Build and test
+        run: swift test
+
+      - name: Build in strict Swift 6 mode
+        run: swift build -Xswiftc -swift-version -Xswiftc 6 -Xswiftc -warnings-as-errors
+
+      - name: Build for iOS
+        run: xcodebuild build -scheme GammaEngage -destination 'generic/platform=iOS'
+
+      - name: Test in the iOS Simulator
+        run: |
+          DEVICE=$(xcrun simctl list devices available | grep -m1 -o 'iPhone [^(]*' | sed 's/ *$//')
+          echo "Using simulator: $DEVICE"
+          xcodebuild test -scheme GammaEngage -destination "platform=iOS Simulator,name=$DEVICE"
